@@ -1,8 +1,8 @@
 const path = require('path');
-const glob = require('glob');
 const inquirer = require('inquirer');
 const emoji = require('node-emoji');
-const { getLangsInDir } = require('../util');
+const { getAllLangsRecursively } = require('../util/lang');
+const { lsd } = require('../util/ls');
 
 exports.command = 'add <keys..>';
 exports.describe = 'Add keys';
@@ -13,21 +13,34 @@ exports.builder = yargs => yargs.positional('keys', {
 });
 
 exports.handler = async (argv) => {
-  const files = glob.sync(path.join(argv.path, '**', `${argv.defaultLang}.json`));
-  let file;
-  if (files.length === 1) {
-    [file] = files;
-  } else {
-    ({ file } = await inquirer.prompt([
+  const files = lsd(argv.path, { recursive: true });
+  const { file } = await inquirer.prompt([
+    {
+      type: 'list',
+      choices: [
+        ...files.map(f => ({ name: f || '<root>', value: { type: 'existing', path: f } })),
+        { name: 'Create New File', value: { type: 'new' } },
+      ],
+      message: 'To which do you wish to add the key',
+      name: 'file',
+    },
+  ]);
+  let directory;
+  if (file.type === 'new') {
+    const answer = await inquirer.prompt([
       {
-        type: 'list',
-        choices: files,
-        message: 'To which do you wish to add the key',
-        name: 'file',
+        type: 'input',
+        message: 'In what directory (relative) do you want to save the new key',
+        name: 'directory',
       },
-    ]));
+    ]);
+    directory = path.join(argv.path, answer.directory);
+  } else {
+    directory = path.dirname(file.path);
   }
-  const langs = getLangsInDir(path.dirname(file)).filter(l => l !== argv.defaultLang);
+  const langs = getAllLangsRecursively(argv.path, argv.defaultLang).filter(
+    l => l !== argv.defaultLang,
+  );
 
   const msgs = {};
   for (const key of argv.keys) {
@@ -52,6 +65,6 @@ exports.handler = async (argv) => {
       msgs[lang][key] = value;
     });
   }
-
+  console.log('saving to ', directory);
   console.log(msgs);
 };

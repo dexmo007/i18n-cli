@@ -10,7 +10,7 @@ const {
   flatten,
   deepSorted,
   saveJson,
-} = require('../util');
+} = require('../util/json-util');
 
 exports.command = 'sync [path]';
 exports.describe = 'sync keys in i18n files';

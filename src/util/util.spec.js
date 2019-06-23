@@ -1,4 +1,4 @@
-const { getKeys, parseToEntries, nestEntries, unnestSingleChildren } = require('./util');
+const { getKeys, parseToEntries, nestEntries, unnestSingleChildren } = require('./json-util');
 
 describe('util/getKeys', () => {
   it('should work', () => {

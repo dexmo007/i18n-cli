@@ -110,8 +110,45 @@ function saveJson(target, json, config) {
   fs.writeFileSync(target, JSON.stringify(json, undefined, indent));
 }
 
-function getLangsInDir(dir) {
-  return glob.sync(path.join(dir, '??.json')).map(f => path.basename(f, '.json'));
+function getKeyRecursively(root, key, defaultLang) {
+  const found = {};
+  const langs = new Set([defaultLang]);
+  glob.sync(path.join(root, '**', '??.json')).forEach((file) => {
+    const msgs = loadFile(file);
+    const lang = path.basename(file, '.json');
+    langs.add(lang);
+    if (msgs[key]) {
+      if (!found[lang]) {
+        found[lang] = [];
+      }
+      found[lang].push({
+        source: file,
+        translation: msgs[key],
+      });
+    }
+  });
+  if (Object.keys(found).length === 0) {
+    return {
+      exists: false,
+      found,
+      missing: [],
+    };
+  }
+  const ambiguous = Object.entries(found).filter(([, vals]) => vals.length > 1);
+  return {
+    exists: true,
+    found,
+    ambiguous:
+      ambiguous.length === 0
+        ? undefined
+        : ambiguous
+          .map(([lang, translations]) => ({ lang, translations }))
+          .reduce((acc, cur) => {
+            acc[cur.lang] = cur.translations;
+            return acc;
+          }, {}),
+    missing: [...langs].filter(l => !Object.keys(found).includes(l)),
+  };
 }
 
 module.exports = {
@@ -123,5 +160,5 @@ module.exports = {
   flatten,
   deepSorted,
   saveJson,
-  getLangsInDir,
+  getKeyRecursively,
 };

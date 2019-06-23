@@ -1,30 +1,11 @@
+#!/usr/bin/env node
 const fs = require('fs');
 const findUp = require('find-up');
-// const merge = require('deepmerge');
 const inquirer = require('inquirer');
 const requireDirectory = require('require-directory');
 
-// const defaultConfig = {
-//   path: '.',
-//   defaultLang: 'en',
-//   sort: true,
-//   unnestSingleChildren: true,
-// };
 const configPath = findUp.sync(['.i18nrc', '.i18nrc.json']);
 const rcConfig = configPath ? JSON.parse(fs.readFileSync(configPath)) : {};
-// const config = merge(defaultConfig, rcConfig);
-
-// .command(
-//   'ls [path]',
-//   'list info about an i18n directory',
-//   (yargs) => {
-//     yargs.positional('path', {
-//       describe: 'path to folder to analyze',
-//       default: '.',
-//     });
-//   },
-//   ls,
-// )
 
 require('yargs')
   .config(rcConfig)
